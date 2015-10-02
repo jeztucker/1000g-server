@@ -1,79 +1,67 @@
 #!flask/bin/python
 from flask import Flask, jsonify, abort, make_response
 from flask import url_for, request
-from flask.ext.httpauth import HTTPBasicAuth
 
-
-auth = HTTPBasicAuth()
-
-@auth.get_password
-def get_password(username):
-    if username == 'miguel':
-        return 'python'
-    return None
-
-@auth.error_handler
-def unauthorized():
-    return make_response(jsonify({'error': 'Unauthorized access'}), 401)
 
 
 app = Flask(__name__)
 
-tasks = [
+snps = [
     {
         'id': 1,
-        'title': u'Buy groceries',
-        'description': u'Milk, Cheese, Pizza, Fruit, Tylenol', 
-        'done': False
+	'chr': u'1',
+	'pos': 57183,
+        'rsid': u'rs368339209',
+        'ref': u'A', 
+        'alt': u'G',
+	'EAS_AF' :0,
+	'AMR_AF':0,
+	'AFR_AF':0.0008,
+	'EUR_AF':0,
+	'SAS_AF':0,
+	'AA': u'.'
     },
     {
         'id': 2,
-        'title': u'Learn Python',
-        'description': u'Need to find a good Python tutorial on the web', 
-        'done': False
-    }
+	'chr': u'1',
+	'pos': 57100,
+        'rsid': u'rs368339209',
+        'ref': u'T',
+        'alt': u'C',
+        'EAS_AF' :0,
+        'AMR_AF':0.45,
+        'AFR_AF':0.08,
+        'EUR_AF':0.44,
+        'SAS_AF':0.1,
+        'AA': u'C'
+    },
 ]
 
-def make_public_task(task):
-    new_task = {}
-    for field in task:
+def make_public_snp(snp):
+    new_snp = {}
+    for field in snp:
         if field == 'id':
-            new_task['uri'] = url_for('get_task', task_id=task['id'], _external=True)
+            new_snp['uri'] = url_for('get_snp', chromosome = snp['chr'], position = snp['pos'], _external=True)
         else:
-            new_task[field] = task[field]
-    return new_task
+            new_snp[field] = snp[field]
+    return new_snp
 
 
-@app.route('/todo/api/v1.0/tasks', methods=['GET'])
-@auth.login_required
+@app.route('/snps/api/v1.0/snps', methods=['GET'])
 def get_tasks():
-	return jsonify({'tasks': [make_public_task(task) for task in tasks]})
+	return jsonify({'snps': [make_public_snp(snp) for snp in snps]})
 
-@app.route('/todo/api/v1.0/tasks/<int:task_id>', methods=['GET'])
-def get_task(task_id):
-    task = [task for task in tasks if task['id'] == task_id]
-    if len(task) == 0:
+@app.route('/snps/api/v1.0/snps/<chromosome>/<int:position>', methods=['GET'])
+def get_snp(snp_id):
+    snp = [snp for snp in snps if snp['chr'] == chromosome and snp['pos'] ==position]
+    if len(snp) == 0:
         abort(404)
-    return jsonify({'task': task[0]})
+    return jsonify({'snp': snp[0]})
 
 
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
-
-
-@app.route('/todo/api/v1.0/tasks', methods=['POST'])
-def create_task():
-    if not request.json or not 'title' in request.json:
-        abort(400)
-    task = {
-        'id': tasks[-1]['id'] + 1,
-        'title': request.json['title'],
-        'description': request.json.get('description', ""),
-        'done': False
-    }
-    tasks.append(task)
-    return jsonify({'task': task}), 201
 
 if __name__ == '__main__':
     app.run(debug=True)
