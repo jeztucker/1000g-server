@@ -8,7 +8,7 @@ To set up and run:
 
 >pip install Flask gunicorn psycopg2 Flask-SQLAlchemy 
 
-./app.py
+python app.py
 
 or testing for heroku:
 
