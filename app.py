@@ -9,37 +9,6 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost/1kg-phase3'
 db = SQLAlchemy(app)
 
-snps = [
-    {
-        'id': 1,
-	'chr': u'1',
-	'pos': 57183,
-        'rsid': u'rs368339209',
-        'ref': u'A', 
-        'alt': u'G',
-	'EAS_AF' :0,
-	'AMR_AF':0,
-	'AFR_AF':0.0008,
-	'EUR_AF':0,
-	'SAS_AF':0,
-	'AA': u'.'
-    },
-    {
-        'id': 2,
-	'chr': u'1',
-	'pos': 57100,
-        'rsid': u'rs368339209',
-        'ref': u'T',
-        'alt': u'C',
-        'EAS_AF' :0,
-        'AMR_AF':0.45,
-        'AFR_AF':0.08,
-        'EUR_AF':0.44,
-        'SAS_AF':0.1,
-        'AA': u'C'
-    },
-]
-
 class SNP(db.Model):
 	__tablename__ = "snps"
 	id = db.Column(db.Integer, primary_key=True)
@@ -66,35 +35,44 @@ class SNP(db.Model):
 		self.AFR_AF = AFR
 		self.EUR_AF = EUR
 		self.SAS_AF = SAS
+	@property
+	def serialize(self):
+		return{
+			'id':  self.id,
+			'chr': self.chr,
+			'pos': self.pos,
+			'rsid': self.rsid,
+			'ref': self.ref,
+			'alt': self.alt,
+			'AA': self.AA,
+			'EAS_AF': self.EAS_AF,
+			'AMR_AF': self.AMR_AF,
+			'AFR_AF': self.AFR_AF,
+			'EUR_AF': self.EUR_AF,
+			'SAS_AF': self.SAS_AF
+		}
 
+db.drop_all()
+db.create_all()
 snp1 = SNP("1", 57100, 'rs368339209', 'T', 'C', 'C', 0, 0.45, 0.08, 0.44, 0.11)
 snp2 = SNP("1", 575453, 'rs368345439', 'A', 'C', 'a', 0.01, 0, 0, 0.04, 0)
 
 db.session.add(snp1)
-#db.session.add(snp2)
-#db.session.commit()
-
-def make_public_snp(snp):
-    new_snp = {}
-    for field in snp:
-        if field == 'id':
-            new_snp['uri'] = url_for('get_snp', chromosome = snp['chr'], position = snp['pos'], _external=True)
-        else:
-            new_snp[field] = snp[field]
-    return new_snp
-
+db.session.add(snp2)
+db.session.commit()
 
 @app.route('/snps/api/v1.0/snps', methods=['GET'])
-def get_tasks():
-	return jsonify({'snps': [make_public_snp(snp) for snp in snps]})
+def get_snps():
+	snpquery = db.session.query(SNP)
+	return jsonify(snp_list = [i.serialize for i in snpquery.all()])
 
 @app.route('/snps/api/v1.0/snps/<chromosome>/<int:position>', methods=['GET'])
-def get_snp(snp_id):
-  
+def get_snp(chromosome, position):
+    snpquery = db.session.query(SNP).filter(SNP.chr == chromosome).filter(SNP.pos == position)
     #snp = [snp for snp in snps if snp['chr'] == chromosome and snp['pos'] ==position]
-    if len(snp) == 0:
-        abort(404)
-    return jsonify({'snp': snp[0]})
+    #if len(snp) == 0:
+    #    abort(404)
+    return jsonify(snp_list=[i.serialize for i in snpquery.all()])
 
 
 @app.errorhandler(404)
