@@ -2,7 +2,7 @@
 from flask import Flask, render_template, jsonify, abort, make_response
 from flask import url_for, request
 from flask.ext.sqlalchemy import SQLAlchemy
-
+from flask.ext.heroku import Heroku
 
 
 app = Flask(__name__)
