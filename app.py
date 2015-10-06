@@ -6,7 +6,8 @@ from flask.ext.sqlalchemy import SQLAlchemy
 
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost/1kg-phase3'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://localhost/1kg-phase3'
+heroku = Heroku(app)
 db = SQLAlchemy(app)
 
 class SNP(db.Model):
